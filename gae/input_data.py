@@ -16,7 +16,9 @@ def load_data(dataset):
     names = ['x', 'tx', 'allx', 'graph']
     objects = []
     for i in range(len(names)):
-        objects.append(pkl.load(open("data/ind.{}.{}".format(dataset, names[i]))))
+        with open("data/ind."+dataset+"."+names[i], 'rb') as f:
+            data = pkl.load(f, encoding='latin1')
+        objects.append(data)
     x, tx, allx, graph = tuple(objects)
     test_idx_reorder = parse_index_file("data/ind.{}.test.index".format(dataset))
     test_idx_range = np.sort(test_idx_reorder)

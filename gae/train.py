@@ -1,5 +1,5 @@
-from __future__ import division
-from __future__ import print_function
+
+
 
 import time
 import os
@@ -14,10 +14,10 @@ import scipy.sparse as sp
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import average_precision_score
 
-from gae.optimizer import OptimizerAE, OptimizerVAE
-from gae.input_data import load_data
-from gae.model import GCNModelAE, GCNModelVAE
-from gae.preprocessing import preprocess_graph, construct_feed_dict, sparse_to_tuple, mask_test_edges
+from optimizer import OptimizerAE, OptimizerVAE
+from input_data import load_data
+from model import GCNModelAE, GCNModelVAE
+from preprocessing import preprocess_graph, construct_feed_dict, sparse_to_tuple, mask_test_edges
 
 # Settings
 flags = tf.app.flags
@@ -29,7 +29,7 @@ flags.DEFINE_integer('hidden2', 16, 'Number of units in hidden layer 2.')
 flags.DEFINE_float('weight_decay', 0., 'Weight for L2 loss on embedding matrix.')
 flags.DEFINE_float('dropout', 0., 'Dropout rate (1 - keep probability).')
 
-flags.DEFINE_string('model', 'gcn_ae', 'Model string.')
+flags.DEFINE_string('model', 'gcn_vae', 'Model string.')
 flags.DEFINE_string('dataset', 'cora', 'Dataset string.')
 flags.DEFINE_integer('features', 1, 'Whether to use features (1) or not (0).')
 
@@ -146,22 +146,26 @@ for epoch in range(FLAGS.epochs):
     feed_dict = construct_feed_dict(adj_norm, adj_label, features, placeholders)
     feed_dict.update({placeholders['dropout']: FLAGS.dropout})
     # Run single weight update
-    outs = sess.run([opt.opt_op, opt.cost, opt.accuracy], feed_dict=feed_dict)
+    outs = sess.run([opt.opt_op, opt.cost, opt.accuracy, opt.z], feed_dict=feed_dict)
 
     # Compute average loss
     avg_cost = outs[1]
     avg_accuracy = outs[2]
-
+    z = outs[3]
     roc_curr, ap_curr = get_roc_score(val_edges, val_edges_false)
     val_roc_score.append(roc_curr)
 
-    print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(avg_cost),
+    print(("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(avg_cost),
           "train_acc=", "{:.5f}".format(avg_accuracy), "val_roc=", "{:.5f}".format(val_roc_score[-1]),
           "val_ap=", "{:.5f}".format(ap_curr),
-          "time=", "{:.5f}".format(time.time() - t))
+          "time=", "{:.5f}".format(time.time() - t)))
+
+print("z matrix")
+print(z)
+print("---------------")
 
 print("Optimization Finished!")
 
 roc_score, ap_score = get_roc_score(test_edges, test_edges_false)
-print('Test ROC score: ' + str(roc_score))
-print('Test AP score: ' + str(ap_score))
+print(('Test ROC score: ' + str(roc_score)))
+print(('Test AP score: ' + str(ap_score)))
